@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.DefectDataMapper">
+
+    <select id="getDefectData" resultType="defectData">
+      SELECT
+        id,
+        `name`
+      FROM
+        ${tableName}
+    </select>
+
+    <insert id="addDefectData">
+        INSERT INTO ${tableName} VALUES (DEFAULT, #{params.name})
+    </insert>
+
+    <update id="updateDefectData">
+        UPDATE
+            ${tableName}
+        SET
+            `name` = #{params.name}
+        WHERE
+            id = #{params.id}
+    </update>
+
+    <delete id="deleteDefectData">
+        DELETE FROM ${tableName} WHERE id = #{id}
+    </delete>
+</mapper>

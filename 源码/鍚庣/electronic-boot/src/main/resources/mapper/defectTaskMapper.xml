@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.DefectTaskMapper">
+
+    <insert id="addDefectTask">
+        INSERT INTO defect_task (
+            `name`,
+            inspection_reciption_id,
+            description
+        ) VALUES(
+            #{params.defectTaskName},
+            #{params.id},
+            #{params.defectTaskDesc}
+        )
+    </insert>
+
+    <select id="searchDefectTask" resultType="defectTask">
+            SELECT
+                a.id,
+                a.`name`,
+                d.id lineId,
+                d.`name` lineName,
+                a.description,
+                a.remark,
+                a.state,
+                (SELECT f.text FROM dict f WHERE f.type='task_state' AND f.`value`=a.state)stateText,
+                a.defect_user defectUser,
+                e.`name` defectUserName
+            FROM
+                defect_task a
+            INNER JOIN inspection_reception b ON a.inspection_reciption_id = b.id
+            INNER JOIN inspection c ON b.inspection_id = c.id
+            INNER JOIN line d ON c.line_id = d.id
+            LEFT JOIN `user` e ON a.defect_user = e.username
+            <where>
+                <if test="condition.lineId != null and condition.lineId != ''">
+                    AND d.id = #{condition.lineId}
+                </if>
+                <if test="condition.lineName != null and condition.lineName != ''">
+                    AND d.name LIKE CONCAT('%', #{condition.lineName}, '%')
+                </if>
+                <if test="condition.state != null">
+                    AND a.state = #{condition.state}
+                </if>
+                <if test="condition.user != null and condition.user != ''">
+                    AND e.username = #{condition.user}
+                </if>
+            </where>
+        UNION
+            SELECT
+                a.id,
+                a.`name`,
+                d.id lineId,
+                d.`name` lineName,
+                a.description,
+                a.remark,
+                a.state,
+                (SELECT f.text FROM dict f WHERE f.type='task_state' AND f.`value`=a.state)stateText,
+                a.defect_user defectUser,
+                e.`name` defectUserName
+            FROM
+                defect_task a
+            INNER JOIN inspection_reception b ON a.inspection_reciption_id = b.id
+            INNER JOIN inspection c ON b.inspection_id = c.id
+            INNER JOIN line d ON c.line_id = d.id
+            LEFT JOIN `user` e ON a.defect_user = e.username
+            <where>
+                <if test="condition.lineId != null and condition.lineId != ''">
+                    AND d.id = #{condition.lineId}
+                </if>
+                <if test="condition.lineName != null and condition.lineName != ''">
+                    AND d.name LIKE CONCAT('%', #{condition.lineName}, '%')
+                </if>
+                <if test="condition.state != null">
+                    AND a.state = #{condition.state}
+                </if>
+                <if test="condition.user != null and condition.user != ''">
+                    AND e.name LIKE CONCAT('%', #{condition.user}, '%')
+                </if>
+            </where>
+    </select>
+
+    <update id="updateDefectTask">
+        UPDATE
+            defect_task
+        <set>
+            <if test="params.state != null">
+                state = #{params.state},
+            </if>
+            <if test="params.operationUser != null and params.operationUser != ''">
+                defect_user = #{params.operationUser}
+            </if>
+        </set>
+        WHERE id = #{params.id}
+    </update>
+</mapper>

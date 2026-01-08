@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.UserMapper">
+
+    <resultMap id="userMap" type="user">
+        <id column="username" property="username" />
+        <result column="roleId" property="roleId" />
+        <collection property="authorities" column="roleId=roleId" select="getUserRole" />
+    </resultMap>
+
+    <select id="getUserByUsername" resultMap="userMap">
+        SELECT
+            username,
+            `password`,
+            `name`,
+            sex,
+            age,
+            phone,
+            email,
+            state,
+            entry_time entryTime,
+            leave_time leaveTime,
+            created_time createdTime,
+            role_id roleId
+        FROM
+            `user`
+        WHERE
+            username = #{username}
+    </select>
+
+    <select id="getUserByPhone" resultMap="userMap">
+        SELECT
+            username,
+            `password`,
+            `name`,
+            sex,
+            age,
+            phone,
+            email,
+            state,
+            entry_time entryTime,
+            leave_time leaveTime,
+            created_time createdTime,
+            role_id roleId
+        FROM
+            `user`
+        WHERE
+            phone = #{mobile}
+    </select>
+
+    <select id="getUserRole" resultType="org.springframework.security.core.authority.SimpleGrantedAuthority">
+        SELECT en_name FROM role WHERE id = #{roleId}
+    </select>
+
+    <select id="getUserMenus" resultType="menu">
+        SELECT
+            d.id,
+            d.`name`,
+            d.route,
+            d.icon
+        FROM
+            `user` a
+        INNER JOIN role b ON a.role_id = b.id
+        INNER JOIN role_menu c ON b.id = c.role_id
+        INNER JOIN menu d ON c.menu_id = d.id
+        WHERE
+            a.username = #{username}
+        ORDER BY
+            d.orders ASC
+    </select>
+
+    <select id="getUsers" resultType="user">
+        SELECT
+            username,
+            `name`,
+            sex,
+            (SELECT d.text FROM dict d WHERE d.type='sex' AND d.value=sex) sexText,
+            age,
+            phone,
+            email,
+            state,
+            (SELECT d.text FROM dict d WHERE d.type='account_state' AND d.value=state) stateText,
+            entry_time entryTime,
+            leave_time leaveTime,
+            created_time createdTime,
+            role_id roleId,
+            (SELECT r.`name` FROM role r WHERE r.id=role_id) roleName
+        FROM
+            `user`
+        <where>
+            <if test="condition.username != null and condition.username != ''">
+                AND username = #{condition.username}
+            </if>
+            <if test="condition.name != null and condition.name != ''">
+                AND name LIKE CONCAT('%', #{condition.name}, '%')
+            </if>
+            <if test="condition.phone != null and condition.phone != ''">
+                AND phone LIKE CONCAT('%', #{condition.phone}, '%')
+            </if>
+            <if test="condition.state != null">
+                AND state = #{condition.state}
+            </if>
+        </where>
+    </select>
+
+    <insert id="addUser">
+        INSERT INTO `user` (
+            `username`,
+            `password`,
+            `name`,
+            `sex`,
+            `age`,
+            `phone`,
+            `email`,
+            `entry_time`
+        ) VALUES (
+            #{user.username},
+            #{user.password},
+            #{user.name},
+            #{user.sex},
+            #{user.age},
+            #{user.phone},
+            #{user.email},
+            #{user.entryTime}
+        )
+    </insert>
+
+    <delete id="deleteUser">
+        DELETE FROM `user` WHERE username IN
+        <foreach collection="usernames" item="username" open="(" separator="," close=")">
+            #{username}
+        </foreach>
+    </delete>
+
+    <update id="changeUserState">
+        UPDATE `user` SET state = #{params.state} WHERE username IN
+        <foreach collection="params.usernames" item="username" open="(" separator="," close=")">
+            #{username}
+        </foreach>
+
+    </update>
+
+    <update id="updateUser">
+        UPDATE
+            `user`
+        SET
+            name = #{params.name},
+            sex = #{params.sex},
+            age = #{params.age},
+            phone = #{params.phone},
+            email = #{params.email},
+            entry_time = #{params.entryTime},
+            <choose>
+                <when test="params.leaveTime != null and params.leaveTime != ''">
+                    leave_time = #{params.leaveTime}
+                </when>
+                <otherwise>
+                    leave_time = NULL
+                </otherwise>
+            </choose>
+        WHERE
+            username = #{params.username}
+    </update>
+
+    <insert id="batchSave">
+        INSERT INTO `user` (
+            `username`,
+            `password`,
+            `name`,
+            `sex`,
+            `age`,
+            `phone`,
+            `email`,
+            `entry_time`,
+            state,
+            role_id
+        ) VALUES
+        <foreach collection="users" item="user" separator=",">
+            (
+             #{user.username},
+             #{password},
+             #{user.name},
+             #{user.sex},
+             #{user.age},
+             #{user.phone},
+             #{user.email},
+             #{user.entryTime},
+             #{user.state},
+             #{user.roleId}
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateUserRole">
+        UPDATE `user` SET role_id = #{roleId} WHERE username = #{username}
+    </update>
+
+    <select id="getUserItems" resultType="user">
+             SELECT
+                username,
+                `name`
+             FROM
+                `user`
+             <where>
+                 <if test="condition.state != null">
+                     AND state = #{condition.state}
+                 </if>
+                 <if test="condition.roleId != null">
+                     AND role_id = #{condition.roleId}
+                 </if>
+                 <if test="condition.queryString != null and condition.queryString != ''">
+                     AND username = #{condition.queryString}
+                 </if>
+             </where>
+         UNION
+            SELECT
+                username,
+                `name`
+            FROM
+                `user`
+            <where>
+                <if test="condition.state != null">
+                    AND state = #{condition.state}
+                </if>
+                <if test="condition.roleId != null">
+                    AND role_id = #{condition.roleId}
+                </if>
+                <if test="condition.queryString != null and condition.queryString != ''">
+                    AND name LIKE CONCAT('%', #{condition.queryString}, '%')
+                </if>
+            </where>
+    </select>
+</mapper>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.DefectReceptionMapper">
+
+    <insert id="addDefectReception">
+        INSERT INTO defect_task_reception (
+            defect_task_id,
+            finish_info,
+            pause_record,
+            report,
+            operation_user
+        ) VALUES (
+            #{params.taskId},
+            #{params.finishInfo},
+            #{params.pauseRecord},
+            #{params.report},
+            #{params.operationUser}
+        )
+    </insert>
+
+    <select id="searchDefectReceptions" resultType="defectReception">
+            SELECT
+                a.id,
+                b.id taskId,
+                b.`name` taskName,
+                e.id lineId,
+                e.`name` lineName,
+                a.finish_info finishInfo,
+                a.pause_record pauseRecord,
+                a.report,
+                a.state,
+                (SELECT g.text FROM dict g WHERE g.type='reception_state' AND g.`value`=a.state)stateText,
+                a.operation_user defectUser,
+                f.`name` defectUserName
+            FROM
+                defect_task_reception a
+            INNER JOIN defect_task b ON a.defect_task_id = b.id
+            INNER JOIN inspection_reception c ON b.inspection_reciption_id = c.id
+            INNER JOIN inspection d ON c.inspection_id = d.id
+            INNER JOIN line e ON d.line_id = e.id
+            INNER JOIN `user` f ON a.operation_user = f.username
+            <where>
+                <if test="condition.lineId != null and condition.lineId != ''">
+                    AND e.id = #{condition.lineId}
+                </if>
+                <if test="condition.lineName != null and condition.lineName != ''">
+                    AND e.name LIKE CONCAT('%', #{condition.lineName}, '%')
+                </if>
+                <if test="condition.state != null">
+                    AND a.state = #{condition.state}
+                </if>
+                <if test="condition.user != null and condition.user != ''">
+                    AND f.username = #{condition.user}
+                </if>
+            </where>
+        UNION
+        SELECT
+            a.id,
+            b.id taskId,
+            b.`name` taskName,
+            e.id lineId,
+            e.`name` lineName,
+            a.finish_info finishInfo,
+            a.pause_record pauseRecord,
+            a.report,
+            a.state,
+            (SELECT g.text FROM dict g WHERE g.type='reception_state' AND g.`value`=a.state)stateText,
+            a.operation_user defectUser,
+            f.`name` defectUserName
+        FROM
+            defect_task_reception a
+        INNER JOIN defect_task b ON a.defect_task_id = b.id
+        INNER JOIN inspection_reception c ON b.inspection_reciption_id = c.id
+        INNER JOIN inspection d ON c.inspection_id = d.id
+        INNER JOIN line e ON d.line_id = e.id
+        INNER JOIN `user` f ON a.operation_user = f.username
+        <where>
+            <if test="condition.lineId != null and condition.lineId != ''">
+                AND e.id = #{condition.lineId}
+            </if>
+            <if test="condition.lineName != null and condition.lineName != ''">
+                AND e.name LIKE CONCAT('%', #{condition.lineName}, '%')
+            </if>
+            <if test="condition.state != null">
+                AND a.state = #{condition.state}
+            </if>
+            <if test="condition.user != null and condition.user != ''">
+                AND f.name LIKE CONCAT('%', #{condition.user}, '%')
+            </if>
+        </where>
+    </select>
+
+    <update id="updateDefectReception">
+        UPDATE
+            defect_task_reception
+        <set>
+            <if test="params.finishInfo != null and params.finishInfo != ''">
+                finish_info = #{params.finishInfo},
+            </if>
+            <if test="params.pauseRecord != null and params.pauseRecord != ''">
+                pause_record = #{params.pauseRecord},
+            </if>
+            <if test="params.report != null and params.report != ''">
+                report = #{params.report},
+            </if>
+            <if test="params.state != null">
+                state = #{params.state},
+            </if>
+        </set>
+        WHERE id = #{params.id}
+    </update>
+
+    <delete id="deleteDefectReception">
+        DELETE FROM defect_task_reception WHERE id = #{id}
+    </delete>
+
+    <select id="getTaskId" resultType="long">
+        SELECT defect_task_id FROM defect_task_reception WHERE id = #{id}
+    </select>
+</mapper>

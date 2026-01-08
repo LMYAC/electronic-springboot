@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.LogMapper">
+
+    <insert id="addLog">
+       INSERT INTO log(
+            id,
+            url,
+            method,
+            operation_time,
+            `user`,
+            has_error
+        )VALUES (
+            #{log.id},
+            #{log.url},
+            #{log.method},
+            #{log.operationTime},
+            #{log.user},
+            #{log.hasError}
+        )
+    </insert>
+
+    <select id="searchLog" resultType="log">
+        SELECT
+            a.id,
+            a.url,
+            a.method,
+            a.operation_time operationTime,
+            a.`user`,
+            b.name userName,
+            a.has_error hasError
+        FROM
+            log a INNER JOIN `user` b ON a.`user` = b.username
+        <where>
+            <if test="condition.startTime != null and condition.startTime != ''">
+                AND a.operation_time >= #{condition.startTime}
+            </if>
+            <if test="condition.endTime != null and condition.endTime != ''">
+                <![CDATA[
+                    AND a.operation_time <= #{condition.endTime}
+                ]]>
+            </if>
+            <if test="condition.user != null and condition.user != ''">
+                AND a.`user` = #{condition.user}
+            </if>
+        </where>
+        UNION
+        SELECT
+            a.id,
+            a.url,
+            a.method,
+            a.operation_time operationTime,
+            a.`user`,
+            b.name userName,
+            a.has_error hasError
+        FROM
+            log a INNER JOIN `user` b ON a.`user` = b.username
+        <where>
+            <if test="condition.startTime != null and condition.startTime != ''">
+                AND a.operation_time >= #{condition.startTime}
+            </if>
+            <if test="condition.endTime != null and condition.endTime != ''">
+                <![CDATA[
+                    AND a.operation_time <= #{condition.endTime}
+                ]]>
+            </if>
+            <if test="condition.user != null and condition.user != ''">
+                AND b.`name` LIKE CONCAT('%', #{condition.user}, '%')
+            </if>
+        </where>
+    </select>
+</mapper>

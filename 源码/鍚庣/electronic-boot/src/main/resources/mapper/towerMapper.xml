@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.TowerMapper">
+
+    <select id="searchTowers" resultType="tower">
+        SELECT
+            id,
+            orders,
+            state,
+            (SELECT d.text FROM dict d WHERE d.type='tower_state' AND d.`value`=state) stateText,
+            position
+        FROM
+            tower
+        <where>
+            <if test="condition.id != null and condition.id != ''">
+                AND id = #{condition.id}
+            </if>
+            <if test="condition.state != null">
+                AND state = #{condition.state}
+            </if>
+            <if test="condition.queryString != null and condition.queryString != ''">
+                AND orders LIKE CONCAT('%', #{condition.queryString}, '%')
+            </if>
+        </where>
+        <if test="condition.queryString != null and condition.queryString != ''">
+            UNION
+                SELECT
+                    id,
+                    orders,
+                    state,
+                    (SELECT d.text FROM dict d WHERE d.type='tower_state' AND d.`value`=state) stateText,
+                    position
+                FROM
+                    tower
+                WHERE
+                    position LIKE CONCAT('%', #{condition.queryString}, '%')
+                    <if test="condition.id != null and condition.id != ''">
+                        AND id = #{condition.id}
+                    </if>
+                    <if test="condition.state != null">
+                        AND state = #{condition.state}
+                    </if>
+        </if>
+    </select>
+
+    <update id="updateTowers">
+        UPDATE
+            tower
+        <set>
+            <if test="params.orders != null and params.orders != ''">
+                orders = #{params.orders},
+            </if>
+            <if test="params.state != null">
+                state = #{params.state},
+            </if>
+            <if test="params.position != null and params.position != ''">
+                `position` = #{params.position},
+            </if>
+        </set>
+        WHERE id IN
+        <foreach collection="params.towerIds" item="towerId" open="(" separator="," close=")">
+            #{towerId}
+        </foreach>
+    </update>
+
+    <select id="getTowerId" resultType="string">
+        SELECT id FROM tower WHERE orders = #{orders}
+    </select>
+
+    <select id="getStartOrders" resultType="string">
+        SELECT orders FROM tower WHERE id = #{towerId}
+    </select>
+
+    <insert id="addTower">
+        INSERT INTO tower (id, orders, state, `position`)
+        VALUES(#{tower.id}, #{tower.orders}, #{tower.state}, #{tower.position})
+    </insert>
+
+    <update id="updateTowerLineId">
+        UPDATE
+            tower
+        SET
+            line_id=(CASE line_id WHEN '' THEN #{lineId} ELSE CONCAT(line_id,',', #{lineId}) END)
+        WHERE id IN(
+            SELECT b.id FROM(
+                SELECT a.id FROM tower a WHERE a.orders BETWEEN
+                (SELECT t.orders FROM tower t WHERE t.id= #{startNumber})
+                AND
+                (SELECT t.orders FROM tower t WHERE t.id=#{endNumber})
+            ) b
+        )
+    </update>
+    <delete id="deleteTowers">
+        DELETE FROM tower WHERE id IN
+        <foreach collection="towerIds" item="towerId" open="(" separator="," close=")">
+            #{towerId}
+        </foreach>
+        AND line_id = ''
+    </delete>
+
+    <update id="removeLineId">
+        UPDATE
+            tower
+        SET
+            line_id=(
+            CASE WHEN POSITION(CONCAT(#{lineId},',') IN line_id) = 1 THEN REPLACE(line_id, CONCAT(#{lineId},','), '')
+            WHEN line_id = #{lineId} THEN ''
+            ELSE REPLACE(line_id, CONCAT(',', #{lineId}), '') END
+            )
+        WHERE POSITION(#{lineId} IN line_id) > 0
+    </update>
+</mapper>

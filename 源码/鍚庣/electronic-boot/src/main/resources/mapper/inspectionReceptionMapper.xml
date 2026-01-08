@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.InspectionReceptionMapper">
+
+   <insert id="addInspectionReception">
+       INSERT INTO inspection_reception (
+          inspection_id,
+          defect_type_id,
+          defect_level_id,
+          rate,
+          operation_user
+      ) VALUES (
+         #{params.inspectionId},
+         #{params.defectTypeId},
+         #{params.defectLevelId},
+         #{params.rate},
+         #{params.user}
+      )
+   </insert>
+
+   <select id="searchInspectionReception" resultType="inspectionReception">
+        SELECT
+          a.id,
+          b.id taskId,
+          b.`name` taskName,
+          c.id lineId,
+          c.`name` lineName,
+          a.defect_type_id defectTypeId,
+          (SELECT d.`name` FROM defect_type d WHERE d.id=a.defect_type_id) defectTypeName,
+          a.defect_level_id defectLevelId,
+          (SELECT d.`name` FROM defect_level d WHERE d.id=a.defect_level_id) defectLevelName,
+          a.state,
+          (SELECT d.text FROM dict d WHERE d.type='reception_state' AND d.`value`=a.state) stateText,
+          a.rate,
+          a.operation_user operationUser,
+          u.`name` operationUserName
+      FROM
+          inspection_reception a
+      INNER JOIN inspection b ON a.inspection_id = b.id
+      INNER JOIN line c ON b.line_id = c.id
+      INNER JOIN `user` u ON a.operation_user=u.username
+      <where>
+         <if test="condition.lineId != null and condition.lineId != ''">
+            AND c.id = #{condition.lineId}
+         </if>
+         <if test="condition.lineName != null and condition.lineName != ''">
+            AND c.name LIKE CONCAT('%', #{condition.lineName}, '%')
+         </if>
+         <if test="condition.user != null and condition.user != ''">
+            AND u.name LIKE CONCAT('%', #{condition.user}, '%')
+         </if>
+         <if test="condition.state != null">
+            AND a.state = #{condition.state}
+         </if>
+      </where>
+   </select>
+
+   <update id="updateInspectionReception">
+      UPDATE
+        inspection_reception
+      <set>
+         <if test="params.defectLevelId != null">
+            defect_level_id = #{params.defectLevelId},
+         </if>
+         <if test="params.defectTypeId != null">
+            defect_type_id = #{params.defectTypeId},
+         </if>
+         <if test="params.inspectionId != null">
+            inspection_id = #{params.inspectionId},
+         </if>
+         <if test="params.rate != null and params.rate != ''">
+            rate = #{params.rate},
+         </if>
+         <if test="params.state != null">
+            state = #{params.state},
+         </if>
+      </set>
+      WHERE id = #{params.id}
+   </update>
+
+   <select id="getInspectionTaskId" resultType="long">
+      SELECT inspection_id FROM inspection_reception WHERE id = #{id}
+   </select>
+
+   <delete id="deleteInspectionReception">
+      DELETE FROM inspection_reception WHERE id = #{id} AND state = 0
+   </delete>
+</mapper>

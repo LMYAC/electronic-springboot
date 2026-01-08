@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.InspectionTaskMapper">
+
+    <insert id="addInspectionTask">
+        INSERT INTO inspection (
+            `name`,
+            line_id,
+            start_number,
+            end_number,
+            state,
+            remark,
+            inspection_user
+        ) VALUES (
+            #{params.name},
+            #{params.lineId},
+            #{params.startNumber},
+            #{params.endNumber},
+            #{params.state},
+            #{params.remark},
+            #{params.inspectionUser}
+        )
+    </insert>
+
+    <select id="searchInspectionTask" resultType="inspectionTask">
+        	SELECT
+                a.id,
+                a.`name`,
+                b.id lineId,
+                b.`name` lineName,
+                a.start_number startNumber,
+                a.end_number endNumber,
+                a.state,
+                (SELECT d.text FROM dict d WHERE d.type='task_state' AND d.`value`=a.state) stateText,
+                a.remark,
+                a.inspection_user inspectionUser,
+                c.`name` inspectionUserName
+            FROM
+                inspection a
+            INNER JOIN line b ON a.line_id = b.id
+            LEFT JOIN `user` c ON a.inspection_user = c.username
+            <where>
+                <if test="condition.lineId != null and condition.lineId != ''">
+                    AND b.id = #{condition.lineId}
+                </if>
+                <if test="condition.lineName != null and condition.lineName != ''">
+                    AND b.`name` LIKE CONCAT('%', #{condition.lineName}, '%')
+                </if>
+                <if test="condition.state != null">
+                    AND a.state = #{condition.state}
+                </if>
+                <if test="condition.user != null and condition.user != ''">
+                    AND c.username = #{condition.user}
+                </if>
+
+                <if test="condition.states != null">
+                    AND a.state IN
+                    <foreach collection="condition.states" item="state" open="(" separator="," close=")">
+                        #{state}
+                    </foreach>
+                </if>
+            </where>
+        UNION
+            SELECT
+                a.id,
+                a.`name`,
+                b.id lineId,
+                b.`name` lineName,
+                a.start_number startNumber,
+                a.end_number endNumber,
+                a.state,
+                (SELECT d.text FROM dict d WHERE d.type='task_state' AND d.`value`=a.state) stateText,
+                a.remark,
+                a.inspection_user inspectionUser,
+                c.`name` inspectionUserName
+            FROM
+                inspection a
+            INNER JOIN line b ON a.line_id = b.id
+            LEFT JOIN `user` c ON a.inspection_user = c.username
+            <where>
+                <if test="condition.lineId != null and condition.lineId != ''">
+                    AND b.id = #{condition.lineId}
+                </if>
+                <if test="condition.lineName != null and condition.lineName != ''">
+                    AND b.`name` LIKE CONCAT('%', #{condition.lineName}, '%')
+                </if>
+                <if test="condition.state != null">
+                    AND a.state = #{condition.state}
+                </if>
+                <if test="condition.user != null and condition.user != ''">
+                    AND c.`name`LIKE CONCAT('%', #{condition.user}, '%')
+                </if>
+            </where>
+    </select>
+
+    <update id="updateInspectionTask">
+        UPDATE
+            inspection
+        <set>
+            <if test="params.endNumber != null and params.endNumber != ''">
+                end_number = #{params.endNumber},
+            </if>
+            <if test="params.startNumber != null and params.startNumber != ''">
+                start_number = #{params.startNumber},
+            </if>
+            <if test="params.name != null and params.name != ''">
+                name = #{params.name},
+            </if>
+            <if test="params.remark != null and params.remark != ''">
+                remark = #{params.remark},
+            </if>
+            <if test="params.state != null">
+                state = #{params.state},
+            </if>
+            <if test="params.inspectionUser != null and params.inspectionUser != ''">
+                inspection_user = #{params.inspectionUser},
+            </if>
+            <if test="params.operationUser != null and params.operationUser != ''">
+                inspection_user = #{params.operationUser},
+            </if>
+        </set>
+        WHERE id = #{params.id}
+    </update>
+
+    <delete id="deleteInspectionTask">
+        DELETE FROM inspection WHERE id = #{id}
+    </delete>
+</mapper>

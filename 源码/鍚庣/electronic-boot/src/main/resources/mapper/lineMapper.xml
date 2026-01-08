@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.LineMapper">
+
+    <select id="searchLines" resultType="line">
+        SELECT
+            id,
+            `name`,
+            tower_num towerNum,
+            start_number startNumber,
+            end_number endNumber,
+            line_length length,
+            back_length backLength,
+            `level`,
+            operate_time operateTime,
+            enable_status enableStatus,
+            (SELECT d.text FROM dict d WHERE d.type='line_state' AND d.`value`=enable_status) enableStatusText,
+            remark
+        FROM
+            line
+        <where>
+            <if test="condition.id != null and condition.id != ''">
+                AND  id = #{condition.id}
+            </if>
+            <if test="condition.state != null">
+                AND enable_status = #{condition.state}
+            </if>
+            <if test="condition.name != null and condition.name != ''">
+                AND name LIKE CONCAT('%',#{condition.name}, '%')
+            </if>
+        </where>
+    </select>
+
+    <insert id="addLine">
+        INSERT INTO line (
+            id,
+            `name`,
+            tower_num,
+            start_number,
+            end_number,
+            line_length,
+            back_length,
+            `level`,
+            operate_time,
+            enable_status,
+            remark
+        )VALUES(
+            #{lineInfo.id},
+            #{lineInfo.name},
+            #{lineInfo.towerNum},
+            #{lineInfo.startNumber},
+            #{lineInfo.endNumber},
+            #{lineInfo.length},
+            #{lineInfo.backLength},
+            #{lineInfo.level},
+            #{lineInfo.operationTime},
+            #{lineInfo.enableStatus},
+            #{lineInfo.remark}
+        )
+    </insert>
+
+    <delete id="deleteLine">
+        DELETE FROM line WHERE id = #{lineId}
+    </delete>
+
+    <update id="updateLines">
+        UPDATE
+            line
+        <set>
+            <if test="params.backLength != null and params.backLength != ''">
+                back_length = #{params.backLength},
+            </if>
+            <if test="params.backLength != null and params.backLength != ''">
+                back_length = #{params.backLength},
+            </if>
+            <if test="params.enableStatus != null">
+                enable_status = #{params.enableStatus},
+            </if>
+            <if test="params.towerNum != null">
+                tower_num = #{params.towerNum},
+            </if>
+            <if test="params.startNumber != null and params.startNumber != ''">
+                start_number = #{params.startNumber},
+            </if>
+            <if test="params.endNumber != null and params.endNumber != ''">
+                end_number = #{params.endNumber},
+            </if>
+            <if test="params.length != null">
+                line_length = #{params.length},
+            </if>
+            <if test="params.level != null and params.level != ''">
+                level = #{params.level},
+            </if>
+            <if test="params.name != null and params.name != ''">
+                name = #{params.name},
+            </if>
+            <if test="params.operateTime != null and params.operateTime != ''">
+                operate_time = #{params.operateTime},
+            </if>
+            <if test="params.remark != null and params.remark != ''">
+                remark = #{params.remark},
+            </if>
+            <if test="params.state != null">
+                enable_status = #{params.state},
+            </if>
+        </set>
+        <where>
+            <if test="params.id != null and params.id != ''">
+                AND id = #{params.id}
+            </if>
+            <if test="params.lineIds != null and params.lineIds != ''">
+                AND id IN
+                <foreach collection="params.lineIds" item="lineId" open="(" separator="," close=")">
+                    #{lineId}
+                </foreach>
+            </if>
+        </where>
+    </update>
+</mapper>

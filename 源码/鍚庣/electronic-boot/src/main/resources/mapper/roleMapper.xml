@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.qf.electronic.mapper.RoleMapper">
+
+    <select id="getRoles" resultType="role">
+        SELECT
+            id,
+            `name`,
+            en_name enName,
+            enable_status enableStatus,
+            (SELECT d.text FROM dict d WHERE d.type='role_status' AND d.`value`=enable_status) enableStatusText
+        FROM
+            role
+        <where>
+            <if test="condition.name != null and condition.name != ''">
+                AND name LIKE CONCAT('%', #{condition.name} ,'%')
+            </if>
+            <if test="condition.status != null">
+                AND enable_status = #{condition.status}
+            </if>
+        </where>
+    </select>
+
+    <update id="updateRole">
+        UPDATE
+            role
+        <set>
+            <if test="params.name != null and  params.name != ''">
+                name = #{params.name},
+            </if>
+            <if test="params.enableStatus != null">
+                enable_status = #{params.enableStatus},
+            </if>
+        </set>
+        WHERE id IN
+        <foreach collection="params.roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+    </update>
+</mapper>
